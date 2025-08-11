@@ -8,6 +8,10 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/components/ui/use-toast';
+import { DocumentUpload } from '@/components/DocumentUpload';
+import { ProfileCompletion } from '@/components/ProfileCompletion';
+import { VisaAssessment } from '@/components/VisaAssessment';
+import { PaymentIntegration } from '@/components/PaymentIntegration';
 import { 
   GraduationCap, 
   MapPin, 
@@ -137,11 +141,12 @@ const Dashboard = () => {
 
       <div className="container mx-auto px-4 py-8">
         <Tabs defaultValue="overview" className="space-y-8">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="assessment">Assessment</TabsTrigger>
             <TabsTrigger value="documents">Documents</TabsTrigger>
             <TabsTrigger value="profile">Profile</TabsTrigger>
+            <TabsTrigger value="payment">Payment</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
@@ -224,63 +229,19 @@ const Dashboard = () => {
           </TabsContent>
 
           <TabsContent value="assessment" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Visa Assessment</CardTitle>
-                <CardDescription>
-                  Get personalized visa recommendations based on your profile
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="text-center py-12">
-                <TrendingUp className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Assessment Coming Soon</h3>
-                <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                  Complete your profile first, then we'll provide detailed visa recommendations and eligibility analysis.
-                </p>
-                <Button>Start Assessment</Button>
-              </CardContent>
-            </Card>
+            <VisaAssessment />
           </TabsContent>
 
           <TabsContent value="documents" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Document Management</CardTitle>
-                <CardDescription>
-                  Upload and manage your visa application documents
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="text-center py-12">
-                <FileText className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Document Upload</h3>
-                <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                  Upload your CV, education certificates, and other required documents for visa assessment.
-                </p>
-                <Button>
-                  <Upload className="w-4 h-4 mr-2" />
-                  Upload Documents
-                </Button>
-              </CardContent>
-            </Card>
+            <DocumentUpload />
           </TabsContent>
 
           <TabsContent value="profile" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Profile Settings</CardTitle>
-                <CardDescription>
-                  Manage your personal information and preferences
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="text-center py-12">
-                <MapPin className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Profile Setup</h3>
-                <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                  Complete your profile with personal details, education, and work experience.
-                </p>
-                <Button>Edit Profile</Button>
-              </CardContent>
-            </Card>
+            <ProfileCompletion />
+          </TabsContent>
+          
+          <TabsContent value="payment" className="space-y-6">
+            <PaymentIntegration />
           </TabsContent>
         </Tabs>
       </div>
