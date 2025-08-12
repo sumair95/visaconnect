@@ -9,8 +9,10 @@ import { useAuth } from '@/hooks/useAuth';
 import { Loader2, MapPin, Shield, FileText } from 'lucide-react';
 
 const Auth = () => {
-  const { user, signIn, signUp, loading } = useAuth();
+  const { user, signIn, signUp, resetPassword, loading } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [showResetForm, setShowResetForm] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
   const [signInData, setSignInData] = useState({ email: '', password: '' });
   const [signUpData, setSignUpData] = useState({ 
     email: '', 
@@ -42,6 +44,15 @@ const Auth = () => {
     setIsLoading(true);
     await signUp(signUpData.email, signUpData.password, signUpData.firstName, signUpData.lastName);
     setIsLoading(false);
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    await resetPassword(resetEmail);
+    setIsLoading(false);
+    setShowResetForm(false);
+    setResetEmail('');
   };
 
   if (loading) {
@@ -143,7 +154,54 @@ const Auth = () => {
                     {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Sign In
                   </Button>
+                  <div className="text-center">
+                    <Button
+                      type="button"
+                      variant="link"
+                      onClick={() => setShowResetForm(true)}
+                      className="text-sm text-muted-foreground hover:text-primary"
+                    >
+                      Forgot your password?
+                    </Button>
+                  </div>
                 </form>
+
+                {showResetForm && (
+                  <div className="space-y-4 mt-4 p-4 border rounded-lg bg-muted/50">
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">Reset Password</Label>
+                      <p className="text-xs text-muted-foreground">
+                        Enter your email address and we'll send you a link to reset your password.
+                      </p>
+                    </div>
+                    <form onSubmit={handleResetPassword} className="space-y-3">
+                      <Input
+                        type="email"
+                        placeholder="Enter your email"
+                        value={resetEmail}
+                        onChange={(e) => setResetEmail(e.target.value)}
+                        required
+                      />
+                      <div className="flex gap-2">
+                        <Button type="submit" size="sm" disabled={isLoading}>
+                          {isLoading && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
+                          Send Reset Link
+                        </Button>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => {
+                            setShowResetForm(false);
+                            setResetEmail('');
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </form>
+                  </div>
+                )}
               </TabsContent>
 
               <TabsContent value="signup" className="space-y-4">

@@ -10,6 +10,7 @@ interface AuthContextType {
   signUp: (email: string, password: string, firstName?: string, lastName?: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<{ error: any }>;
+  resetPassword: (email: string) => Promise<{ error: any }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -151,6 +152,38 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
+  const resetPassword = async (email: string) => {
+    try {
+      const redirectUrl = `${window.location.origin}/auth`;
+      
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: redirectUrl,
+      });
+
+      if (error) {
+        toast({
+          title: "Password reset failed",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Check your email",
+          description: "We've sent you a password reset link",
+        });
+      }
+
+      return { error };
+    } catch (error: any) {
+      toast({
+        title: "Password reset failed",
+        description: error.message,
+        variant: "destructive",
+      });
+      return { error };
+    }
+  };
+
   const value: AuthContextType = {
     user,
     session,
@@ -158,6 +191,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     signUp,
     signIn,
     signOut,
+    resetPassword,
   };
 
   return (
