@@ -30,7 +30,7 @@ site_url = "http://localhost:3000"
 additional_redirect_urls = ["https://syibrvgzqxokhrvylzgp.supabase.co"]
 jwt_expiry = 3600
 enable_signup = true
-enable_confirmations = false
+enable_confirmations = true
 
 [functions.visa-assessment]
 verify_jwt = true
