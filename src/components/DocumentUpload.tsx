@@ -66,7 +66,10 @@ export const DocumentUpload: React.FC = () => {
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file || !user || !selectedType) return;
+    if (!file || !user || !selectedType) {
+      console.log('Upload validation failed:', { file: !!file, user: !!user, selectedType });
+      return;
+    }
 
     if (file.size > 10 * 1024 * 1024) { // 10MB limit
       toast({
@@ -83,11 +86,15 @@ export const DocumentUpload: React.FC = () => {
     try {
       const fileExt = file.name.split('.').pop();
       const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+      
+      console.log('Attempting upload:', { fileName, userId: user.id, fileSize: file.size });
 
       // Upload to Supabase Storage
       const { error: uploadError } = await supabase.storage
         .from('documents')
         .upload(fileName, file);
+      
+      console.log('Upload result:', { uploadError });
 
       // Simulate progress for UX
       const progressInterval = setInterval(() => {
