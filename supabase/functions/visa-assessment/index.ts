@@ -110,6 +110,13 @@ Format your response as JSON with this structure:
     });
 
     const aiData = await response.json();
+    
+    // Check if OpenAI response is valid
+    if (!aiData.choices || aiData.choices.length === 0) {
+      console.error('OpenAI API error:', aiData);
+      throw new Error('Invalid response from OpenAI API');
+    }
+    
     const assessmentText = aiData.choices[0].message.content;
 
     // Parse AI response
