@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
@@ -56,8 +57,12 @@ serve(async (req) => {
     const age = profile.date_of_birth ? 
       Math.floor((Date.now() - new Date(profile.date_of_birth).getTime()) / (365.25 * 24 * 60 * 60 * 1000)) : 0;
 
-    // Prepare assessment prompt
-    const prompt = `Analyze the following user profile for Australian visa eligibility and provide a detailed assessment:
+    let assessmentResult;
+
+    // Try OpenAI API if key is available and valid
+    if (openAIApiKey) {
+      // Prepare assessment prompt
+      const prompt = `Analyze the following user profile for Australian visa eligibility and provide a detailed assessment:
 
 User Profile:
 - Age: ${age} years
@@ -86,52 +91,67 @@ Format your response as JSON with this structure:
   "detailed_analysis": "string"
 }`;
 
-    // Call OpenAI API
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are an expert Australian immigration consultant. Provide accurate, helpful visa assessments based on current immigration requirements.'
+      try {
+        // Call OpenAI API
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${openAIApiKey}`,
+            'Content-Type': 'application/json',
           },
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
-        temperature: 0.3,
-      }),
-    });
+          body: JSON.stringify({
+            model: 'gpt-4o-mini',
+            messages: [
+              {
+                role: 'system',
+                content: 'You are an expert Australian immigration consultant. Provide accurate, helpful visa assessments based on current immigration requirements.'
+              },
+              {
+                role: 'user',
+                content: prompt
+              }
+            ],
+            temperature: 0.3,
+          }),
+        });
 
-    const aiData = await response.json();
-    
-    // Check if OpenAI response is valid
-    if (!aiData.choices || aiData.choices.length === 0) {
-      console.error('OpenAI API error:', aiData);
-      throw new Error('Invalid response from OpenAI API');
-    }
-    
-    const assessmentText = aiData.choices[0].message.content;
+        const aiData = await response.json();
+        
+        // Check for OpenAI API errors
+        if (aiData.error) {
+          console.error('OpenAI API error:', aiData.error);
+          throw new Error(`OpenAI API error: ${aiData.error.message}`);
+        }
+        
+        // Check if OpenAI response is valid
+        if (!aiData.choices || aiData.choices.length === 0) {
+          console.error('Invalid OpenAI response:', aiData);
+          throw new Error('Invalid response from OpenAI API');
+        }
+        
+        const assessmentText = aiData.choices[0].message.content;
 
-    // Parse AI response
-    let assessmentResult;
-    try {
-      assessmentResult = JSON.parse(assessmentText);
-    } catch (e) {
-      // Fallback if JSON parsing fails
-      assessmentResult = {
-        assessment_score: 65,
-        recommended_visa_code: "189",
-        strengths: ["Strong professional background", "Good education level"],
-        improvement_areas: ["Consider skills assessment", "Improve English proficiency"],
-        detailed_analysis: assessmentText
-      };
+        // Parse AI response
+        try {
+          assessmentResult = JSON.parse(assessmentText);
+        } catch (e) {
+          // Fallback if JSON parsing fails
+          assessmentResult = {
+            assessment_score: 65,
+            recommended_visa_code: "189",
+            strengths: ["Strong professional background", "Good education level"],
+            improvement_areas: ["Consider skills assessment", "Improve English proficiency"],
+            detailed_analysis: assessmentText
+          };
+        }
+      } catch (error) {
+        console.error('OpenAI API call failed:', error);
+        // Fall back to basic assessment
+        assessmentResult = await generateBasicAssessment(profile, age, visaCategories);
+      }
+    } else {
+      // No OpenAI key available, use basic assessment
+      assessmentResult = await generateBasicAssessment(profile, age, visaCategories);
     }
 
     // Find recommended visa
@@ -176,3 +196,54 @@ Format your response as JSON with this structure:
     });
   }
 });
+
+// Basic assessment function when OpenAI is not available
+async function generateBasicAssessment(profile: any, age: number, visaCategories: any[]) {
+  let score = 50; // Base score
+  
+  // Age scoring (based on Australian points system)
+  if (age >= 25 && age <= 32) score += 15;
+  else if (age >= 33 && age <= 39) score += 10;
+  else if (age >= 40 && age <= 44) score += 5;
+  
+  // Education scoring
+  if (profile.education_level === 'PhD' || profile.education_level === 'Masters') score += 15;
+  else if (profile.education_level === 'Bachelors') score += 10;
+  else if (profile.education_level === 'Diploma') score += 5;
+  
+  // Experience scoring
+  if (profile.years_of_experience >= 8) score += 10;
+  else if (profile.years_of_experience >= 5) score += 5;
+  else if (profile.years_of_experience >= 3) score += 3;
+  
+  // Cap at 100
+  score = Math.min(score, 100);
+  
+  const strengths = [];
+  const improvements = [];
+  
+  if (age >= 25 && age <= 32) strengths.push("Optimal age range for visa applications");
+  if (profile.education_level === 'PhD' || profile.education_level === 'Masters') strengths.push("High level of education");
+  if (profile.years_of_experience >= 5) strengths.push("Substantial work experience");
+  if (profile.current_occupation) strengths.push("Clear occupation pathway");
+  
+  if (age > 44) improvements.push("Consider applying soon as age affects points");
+  if (!profile.education_level || profile.education_level === 'High School') improvements.push("Consider higher education qualifications");
+  if (profile.years_of_experience < 3) improvements.push("Gain more relevant work experience");
+  improvements.push("Complete English proficiency test (IELTS/PTE)");
+  improvements.push("Get skills assessment from relevant authority");
+  
+  // Recommend most suitable visa based on score
+  let recommendedVisa = "189"; // Default to Skilled Independent
+  if (score >= 80) recommendedVisa = "189";
+  else if (score >= 65) recommendedVisa = "190";
+  else recommendedVisa = "491";
+  
+  return {
+    assessment_score: score,
+    recommended_visa_code: recommendedVisa,
+    strengths: strengths.slice(0, 5),
+    improvement_areas: improvements.slice(0, 5),
+    detailed_analysis: `Based on your profile analysis, you scored ${score}/100 points. This assessment considers your age (${age} years), education level (${profile.education_level}), and work experience (${profile.years_of_experience} years). The recommended visa subclass ${recommendedVisa} aligns with your current profile strength.`
+  };
+}

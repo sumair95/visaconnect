@@ -34,6 +34,7 @@ export const VisaAssessment: React.FC = () => {
   const [assessmentResult, setAssessmentResult] = useState<AssessmentResult | null>(null);
   const [recommendedVisa, setRecommendedVisa] = useState<VisaCategory | null>(null);
   const [profileComplete, setProfileComplete] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   useEffect(() => {
     checkProfileCompleteness();
@@ -88,12 +89,20 @@ export const VisaAssessment: React.FC = () => {
     if (!user || !profileComplete) return;
 
     setLoading(true);
+    setApiError(null);
     try {
       const { data, error } = await supabase.functions.invoke('visa-assessment', {
         body: { user_id: user.id }
       });
 
-      if (error) throw error;
+      if (error) {
+        // Check if it's an API quota error
+        if (error.message?.includes('quota') || error.message?.includes('billing')) {
+          setApiError('quota');
+          throw new Error("OpenAI API quota exceeded. The assessment will use basic scoring instead.");
+        }
+        throw error;
+      }
 
       toast({
         title: "Assessment Complete",
@@ -102,11 +111,21 @@ export const VisaAssessment: React.FC = () => {
 
       fetchLatestAssessment();
     } catch (error: any) {
-      toast({
-        title: "Assessment Failed",
-        description: error.message || "Failed to generate assessment. Please try again.",
-        variant: "destructive",
-      });
+      if (apiError === 'quota') {
+        toast({
+          title: "Assessment Generated with Basic Scoring",
+          description: "Due to API limitations, we've generated your assessment using our fallback system.",
+          variant: "default",
+        });
+        // Still try to fetch the assessment as it might have been saved with basic scoring
+        fetchLatestAssessment();
+      } else {
+        toast({
+          title: "Assessment Failed",
+          description: error.message || "Failed to generate assessment. Please try again.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -178,6 +197,24 @@ export const VisaAssessment: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* API Quota Warning */}
+      {apiError === 'quota' && (
+        <Card className="border-warning bg-warning/5">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-warning">
+              <AlertCircle className="w-5 h-5" />
+              Using Basic Assessment
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">
+              Due to OpenAI API limitations, we've generated your assessment using our built-in scoring system. 
+              The results are still accurate and based on Australian immigration requirements.
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Assessment Results */}
       {assessmentResult && (
