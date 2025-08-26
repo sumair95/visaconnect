@@ -62,16 +62,9 @@ const Dashboard = () => {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Redirect if not authenticated
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
   const fetchData = async () => {
+    if (!user) return;
+    
     try {
       // Fetch visa categories
       const { data: visas, error: visaError } = await supabase
@@ -102,6 +95,15 @@ const Dashboard = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  // Redirect if not authenticated
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
 
   const handleSignOut = async () => {
     await signOut();
