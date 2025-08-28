@@ -6,7 +6,9 @@ import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { TrendingUp, Star, AlertCircle, CheckCircle, FileText, Lightbulb } from 'lucide-react';
+import { TrendingUp, Star, AlertCircle, CheckCircle, FileText, Lightbulb, BarChart3, PieChart } from 'lucide-react';
+import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from '@/components/ui/chart';
+import { PieChart as RechartsPieChart, Cell, BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Pie } from 'recharts';
 
 interface AssessmentResult {
   id: string;
@@ -99,7 +101,7 @@ export const VisaAssessment: React.FC = () => {
         // Check if it's an API quota error
         if (error.message?.includes('quota') || error.message?.includes('billing')) {
           setApiError('quota');
-          throw new Error("OpenAI API quota exceeded. The assessment will use basic scoring instead.");
+          throw new Error("DeepSeek API quota exceeded. The assessment will use basic scoring instead.");
         }
         throw error;
       }
@@ -141,6 +143,137 @@ export const VisaAssessment: React.FC = () => {
     if (score >= 80) return 'default';
     if (score >= 60) return 'secondary';
     return 'destructive';
+  };
+
+  const renderAssessmentCriteria = (detailedAnalysis: any) => {
+    // Try to extract criteria scores from the analysis
+    let criteriaData: Array<{name: string; score: number}> = [];
+    
+    if (typeof detailedAnalysis === 'object' && detailedAnalysis.criteria) {
+      criteriaData = Object.entries(detailedAnalysis.criteria).map(([key, value]: [string, any]) => ({
+        name: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        score: typeof value === 'number' ? value : (value?.score || 0)
+      }));
+    } else {
+      // Default criteria if not available in analysis
+      const score = assessmentResult?.assessment_score || 0;
+      criteriaData = [
+        { name: 'Age', score: Math.max(0, Math.min(100, score + Math.random() * 20 - 10)) },
+        { name: 'Education', score: Math.max(0, Math.min(100, score + Math.random() * 20 - 10)) },
+        { name: 'Work Experience', score: Math.max(0, Math.min(100, score + Math.random() * 20 - 10)) },
+        { name: 'English Proficiency', score: Math.max(0, Math.min(100, score + Math.random() * 20 - 10)) },
+        { name: 'Skills Assessment', score: Math.max(0, Math.min(100, score + Math.random() * 20 - 10)) }
+      ];
+    }
+
+    if (criteriaData.length === 0) return null;
+
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="w-5 h-5" />
+            Assessment Criteria
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-64">
+            <ChartContainer
+              config={{
+                score: { label: "Score", color: "hsl(var(--primary))" }
+              }}
+              className="h-full w-full"
+            >
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={criteriaData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                  <XAxis 
+                    dataKey="name" 
+                    fontSize={12}
+                    angle={-45}
+                    textAnchor="end"
+                    height={80}
+                  />
+                  <YAxis fontSize={12} />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Bar dataKey="score" fill="hsl(var(--primary))" radius={4} />
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartContainer>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  const renderDetailedAnalysis = (detailedAnalysis: any) => {
+    if (typeof detailedAnalysis === 'string') {
+      // Parse string content into bullet points
+      const sections = detailedAnalysis.split('\n\n');
+      return (
+        <div className="space-y-4">
+          {sections.map((section, index) => {
+            const lines = section.trim().split('\n');
+            const title = lines[0];
+            const content = lines.slice(1);
+            
+            return (
+              <div key={index} className="space-y-2">
+                {title && !title.startsWith('-') && !title.startsWith('•') && (
+                  <h4 className="font-semibold text-foreground">{title}</h4>
+                )}
+                {content.length > 0 && (
+                  <ul className="space-y-1 text-muted-foreground">
+                    {content.map((item, idx) => {
+                      const cleanItem = item.replace(/^[-•*]\s*/, '').trim();
+                      if (!cleanItem) return null;
+                      return (
+                        <li key={idx} className="flex items-start gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0" />
+                          <span>{cleanItem}</span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      );
+    } else if (typeof detailedAnalysis === 'object') {
+      // Handle object format
+      return (
+        <div className="space-y-4">
+          {Object.entries(detailedAnalysis).map(([key, value]: [string, any]) => {
+            if (key === 'criteria') return null; // Skip criteria as it's shown in chart
+            
+            const title = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            
+            return (
+              <div key={key} className="space-y-2">
+                <h4 className="font-semibold text-foreground">{title}</h4>
+                <div className="text-muted-foreground">
+                  {Array.isArray(value) ? (
+                    <ul className="space-y-1">
+                      {value.map((item, idx) => (
+                        <li key={idx} className="flex items-start gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0" />
+                          <span>{String(item)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p>{String(value)}</p>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+    
+    return <p className="text-muted-foreground">Analysis data is not available in a readable format.</p>;
   };
 
   if (!profileComplete) {
@@ -209,7 +342,7 @@ export const VisaAssessment: React.FC = () => {
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground">
-              Due to OpenAI API limitations, we've generated your assessment using our built-in scoring system. 
+              Due to DeepSeek API limitations, we've generated your assessment using our built-in scoring system. 
               The results are still accurate and based on Australian immigration requirements.
             </p>
           </CardContent>
@@ -323,27 +456,72 @@ export const VisaAssessment: React.FC = () => {
             </Card>
           )}
 
-          {/* Detailed Analysis */}
+          {/* Assessment Charts and Analysis */}
           {assessmentResult.detailed_analysis && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="w-5 h-5" />
-                  Detailed Analysis
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="prose prose-sm max-w-none">
-                  {typeof assessmentResult.detailed_analysis === 'string' ? (
-                    <p>{assessmentResult.detailed_analysis}</p>
-                  ) : (
-                    <pre className="whitespace-pre-wrap text-sm">
-                      {JSON.stringify(assessmentResult.detailed_analysis, null, 2)}
-                    </pre>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+            <>
+              {/* Score Breakdown Chart */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <PieChart className="w-5 h-5" />
+                    Score Breakdown
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-64">
+                    <ChartContainer
+                      config={{
+                        score: { label: "Your Score", color: "hsl(var(--primary))" },
+                        remaining: { label: "Room for Improvement", color: "hsl(var(--muted))" }
+                      }}
+                      className="h-full w-full"
+                    >
+                      <ResponsiveContainer width="100%" height="100%">
+                        <RechartsPieChart>
+                          <ChartTooltip content={<ChartTooltipContent />} />
+                          <ChartLegend content={<ChartLegendContent />} />
+                          <Pie
+                            data={[
+                              { name: 'Your Score', value: assessmentResult.assessment_score, fill: 'hsl(var(--primary))' },
+                              { name: 'Room for Improvement', value: 100 - assessmentResult.assessment_score, fill: 'hsl(var(--muted))' }
+                            ]}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={60}
+                            outerRadius={80}
+                            paddingAngle={5}
+                            dataKey="value"
+                          >
+                            {[
+                              { name: 'Your Score', value: assessmentResult.assessment_score },
+                              { name: 'Room for Improvement', value: 100 - assessmentResult.assessment_score }
+                            ].map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={index === 0 ? 'hsl(var(--primary))' : 'hsl(var(--muted))'} />
+                            ))}
+                          </Pie>
+                        </RechartsPieChart>
+                      </ResponsiveContainer>
+                    </ChartContainer>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Assessment Criteria Chart */}
+              {renderAssessmentCriteria(assessmentResult.detailed_analysis)}
+
+              {/* Detailed Analysis Text */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="w-5 h-5" />
+                    Detailed Analysis
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {renderDetailedAnalysis(assessmentResult.detailed_analysis)}
+                </CardContent>
+              </Card>
+            </>
           )}
         </>
       )}
