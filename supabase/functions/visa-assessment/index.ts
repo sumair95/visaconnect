@@ -8,7 +8,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const deepSeekApiKey = Deno.env.get('DEEPSEEK_API_KEY');
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -59,8 +59,8 @@ serve(async (req) => {
 
     let assessmentResult;
 
-    // Try OpenAI API if key is available and valid
-    if (openAIApiKey) {
+    // Try DeepSeek API if key is available and valid
+    if (deepSeekApiKey) {
       // Prepare assessment prompt
       const prompt = `Analyze the following user profile for Australian visa eligibility and provide a detailed assessment:
 
@@ -92,15 +92,15 @@ Format your response as JSON with this structure:
 }`;
 
       try {
-        // Call OpenAI API
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        // Call DeepSeek API
+        const response = await fetch('https://api.deepseek.com/chat/completions', {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${openAIApiKey}`,
+            'Authorization': `Bearer ${deepSeekApiKey}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            model: 'gpt-4o-mini',
+            model: 'deepseek-chat',
             messages: [
               {
                 role: 'system',
@@ -117,16 +117,16 @@ Format your response as JSON with this structure:
 
         const aiData = await response.json();
         
-        // Check for OpenAI API errors
+        // Check for DeepSeek API errors
         if (aiData.error) {
-          console.error('OpenAI API error:', aiData.error);
-          throw new Error(`OpenAI API error: ${aiData.error.message}`);
+          console.error('DeepSeek API error:', aiData.error);
+          throw new Error(`DeepSeek API error: ${aiData.error.message}`);
         }
         
-        // Check if OpenAI response is valid
+        // Check if DeepSeek response is valid
         if (!aiData.choices || aiData.choices.length === 0) {
-          console.error('Invalid OpenAI response:', aiData);
-          throw new Error('Invalid response from OpenAI API');
+          console.error('Invalid DeepSeek response:', aiData);
+          throw new Error('Invalid response from DeepSeek API');
         }
         
         const assessmentText = aiData.choices[0].message.content;
@@ -145,12 +145,12 @@ Format your response as JSON with this structure:
           };
         }
       } catch (error) {
-        console.error('OpenAI API call failed:', error);
+        console.error('DeepSeek API call failed:', error);
         // Fall back to basic assessment
         assessmentResult = await generateBasicAssessment(profile, age, visaCategories);
       }
     } else {
-      // No OpenAI key available, use basic assessment
+      // No DeepSeek key available, use basic assessment
       assessmentResult = await generateBasicAssessment(profile, age, visaCategories);
     }
 
@@ -197,7 +197,7 @@ Format your response as JSON with this structure:
   }
 });
 
-// Basic assessment function when OpenAI is not available
+// Basic assessment function when DeepSeek is not available
 async function generateBasicAssessment(profile: any, age: number, visaCategories: any[]) {
   let score = 50; // Base score
   
