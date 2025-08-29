@@ -12,6 +12,7 @@ import { DocumentUpload } from '@/components/DocumentUpload';
 import { ProfileCompletion } from '@/components/ProfileCompletion';
 import { VisaAssessment } from '@/components/VisaAssessment';
 import { PaymentIntegration } from '@/components/PaymentIntegration';
+import { VisaRequirementsModal } from '@/components/VisaRequirementsModal';
 import { 
   GraduationCap, 
   MapPin, 
@@ -61,6 +62,8 @@ const Dashboard = () => {
   const [visaCategories, setVisaCategories] = useState<VisaCategory[]>([]);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedVisa, setSelectedVisa] = useState<VisaCategory | null>(null);
+  const [requirementsModalOpen, setRequirementsModalOpen] = useState(false);
 
   const fetchData = async () => {
     if (!user) return;
@@ -107,6 +110,11 @@ const Dashboard = () => {
 
   const handleSignOut = async () => {
     await signOut();
+  };
+
+  const handleViewRequirements = (visa: VisaCategory) => {
+    setSelectedVisa(visa);
+    setRequirementsModalOpen(true);
   };
 
   if (loading) {
@@ -220,7 +228,11 @@ const Dashboard = () => {
                         </Badge>
                       )}
                       
-                      <Button className="w-full" variant="outline">
+                      <Button 
+                        className="w-full" 
+                        variant="outline"
+                        onClick={() => handleViewRequirements(visa)}
+                      >
                         View Requirements
                       </Button>
                     </CardContent>
@@ -247,6 +259,12 @@ const Dashboard = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      <VisaRequirementsModal
+        visa={selectedVisa}
+        open={requirementsModalOpen}
+        onOpenChange={setRequirementsModalOpen}
+      />
     </div>
   );
 };

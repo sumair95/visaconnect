@@ -199,51 +199,135 @@ Format your response as JSON with this structure:
 
 // Basic assessment function when DeepSeek is not available
 async function generateBasicAssessment(profile: any, age: number, visaCategories: any[]) {
-  let score = 50; // Base score
+  let score = 0; // Start from 0 for more accurate scoring
+  let pointsBreakdown = {
+    age: 0,
+    education: 0,
+    experience: 0,
+    english: 0,
+    additional: 0
+  };
   
-  // Age scoring (based on Australian points system)
-  if (age >= 25 && age <= 32) score += 15;
-  else if (age >= 33 && age <= 39) score += 10;
-  else if (age >= 40 && age <= 44) score += 5;
+  // Age scoring (Australian immigration points system)
+  if (age >= 18 && age <= 24) {
+    pointsBreakdown.age = 25;
+    score += 25;
+  } else if (age >= 25 && age <= 32) {
+    pointsBreakdown.age = 30;
+    score += 30;
+  } else if (age >= 33 && age <= 39) {
+    pointsBreakdown.age = 25;
+    score += 25;
+  } else if (age >= 40 && age <= 44) {
+    pointsBreakdown.age = 15;
+    score += 15;
+  } else if (age >= 45) {
+    pointsBreakdown.age = 0;
+    score += 0;
+  }
   
-  // Education scoring
-  if (profile.education_level === 'PhD' || profile.education_level === 'Masters') score += 15;
-  else if (profile.education_level === 'Bachelors') score += 10;
-  else if (profile.education_level === 'Diploma') score += 5;
+  // Education scoring (Australian points system)
+  const educationLevel = profile.education_level?.toLowerCase() || '';
+  if (educationLevel.includes('phd') || educationLevel.includes('doctorate')) {
+    pointsBreakdown.education = 20;
+    score += 20;
+  } else if (educationLevel.includes('masters') || educationLevel.includes('master')) {
+    pointsBreakdown.education = 15;
+    score += 15;
+  } else if (educationLevel.includes('bachelors') || educationLevel.includes('bachelor')) {
+    pointsBreakdown.education = 15;
+    score += 15;
+  } else if (educationLevel.includes('diploma') || educationLevel.includes('advanced diploma')) {
+    pointsBreakdown.education = 10;
+    score += 10;
+  } else if (educationLevel.includes('certificate') || educationLevel.includes('trade')) {
+    pointsBreakdown.education = 10;
+    score += 10;
+  }
   
-  // Experience scoring
-  if (profile.years_of_experience >= 8) score += 10;
-  else if (profile.years_of_experience >= 5) score += 5;
-  else if (profile.years_of_experience >= 3) score += 3;
+  // Work experience scoring (Australian points system)
+  const experience = profile.years_of_experience || 0;
+  if (experience >= 8) {
+    pointsBreakdown.experience = 15;
+    score += 15;
+  } else if (experience >= 5) {
+    pointsBreakdown.experience = 10;
+    score += 10;
+  } else if (experience >= 3) {
+    pointsBreakdown.experience = 5;
+    score += 5;
+  }
   
-  // Cap at 100
-  score = Math.min(score, 100);
+  // English proficiency (assumed competent level for basic assessment)
+  pointsBreakdown.english = 10; // Assume competent English
+  score += 10;
+  
+  // Additional factors
+  if (profile.preferred_state && profile.preferred_state !== 'Any') {
+    pointsBreakdown.additional += 5; // State nomination potential
+    score += 5;
+  }
+  
+  // Professional year bonus (if applicable)
+  if (profile.current_occupation && 
+      (profile.current_occupation.toLowerCase().includes('engineer') || 
+       profile.current_occupation.toLowerCase().includes('accountant') || 
+       profile.current_occupation.toLowerCase().includes('it') ||
+       profile.current_occupation.toLowerCase().includes('computer'))) {
+    pointsBreakdown.additional += 5;
+    score += 5;
+  }
   
   const strengths = [];
   const improvements = [];
   
-  if (age >= 25 && age <= 32) strengths.push("Optimal age range for visa applications");
-  if (profile.education_level === 'PhD' || profile.education_level === 'Masters') strengths.push("High level of education");
-  if (profile.years_of_experience >= 5) strengths.push("Substantial work experience");
-  if (profile.current_occupation) strengths.push("Clear occupation pathway");
+  // Dynamic strengths based on actual scoring
+  if (pointsBreakdown.age >= 25) strengths.push(`Excellent age range (${age} years) - ${pointsBreakdown.age} points`);
+  if (pointsBreakdown.education >= 15) strengths.push(`Strong educational qualifications - ${pointsBreakdown.education} points`);
+  if (pointsBreakdown.experience >= 10) strengths.push(`Substantial work experience (${experience} years) - ${pointsBreakdown.experience} points`);
+  if (profile.current_occupation) strengths.push("Clear occupation pathway for skills assessment");
+  if (score >= 65) strengths.push("Meets minimum points threshold for skilled migration");
   
-  if (age > 44) improvements.push("Consider applying soon as age affects points");
-  if (!profile.education_level || profile.education_level === 'High School') improvements.push("Consider higher education qualifications");
-  if (profile.years_of_experience < 3) improvements.push("Gain more relevant work experience");
-  improvements.push("Complete English proficiency test (IELTS/PTE)");
-  improvements.push("Get skills assessment from relevant authority");
+  // Dynamic improvements based on scoring gaps
+  if (pointsBreakdown.age < 15) improvements.push("Age affects points - consider applying sooner");
+  if (pointsBreakdown.education < 15) improvements.push("Higher qualifications could improve your score significantly");
+  if (pointsBreakdown.experience < 10) improvements.push("More work experience would boost your points");
+  if (!profile.preferred_state || profile.preferred_state === 'Any') {
+    improvements.push("Consider state nomination for additional 5-15 points");
+  }
   
-  // Recommend most suitable visa based on score
-  let recommendedVisa = "189"; // Default to Skilled Independent
-  if (score >= 80) recommendedVisa = "189";
-  else if (score >= 65) recommendedVisa = "190";
-  else recommendedVisa = "491";
+  // Always include these standard improvements
+  improvements.push("Achieve superior English (8.0+ IELTS) for maximum 20 points");
+  improvements.push("Complete skills assessment from relevant assessing authority");
+  if (score < 80) improvements.push("Consider Professional Year program for additional points");
+  
+  // Recommend visa based on actual points score
+  let recommendedVisa = "491"; // Regional visa as fallback
+  if (score >= 85) {
+    recommendedVisa = "189"; // Skilled Independent
+  } else if (score >= 70) {
+    recommendedVisa = "190"; // State Nominated
+  } else if (score >= 55) {
+    recommendedVisa = "491"; // Regional
+  } else {
+    recommendedVisa = "482"; // Temporary Skills Shortage
+  }
+  
+  // Generate detailed analysis
+  const analysis = {
+    summary: `Based on your profile, you scored ${score} points out of 100. This assessment follows the Australian immigration points system.`,
+    breakdown: pointsBreakdown,
+    recommendation: `With ${score} points, visa subclass ${recommendedVisa} appears most suitable for your profile.`,
+    nextSteps: score >= 65 ? 
+      "You meet the minimum points requirement. Focus on skills assessment and English test preparation." :
+      "You're below the minimum 65 points threshold. Consider improving your qualifications or English proficiency."
+  };
   
   return {
     assessment_score: score,
     recommended_visa_code: recommendedVisa,
     strengths: strengths.slice(0, 5),
     improvement_areas: improvements.slice(0, 5),
-    detailed_analysis: `Based on your profile analysis, you scored ${score}/100 points. This assessment considers your age (${age} years), education level (${profile.education_level}), and work experience (${profile.years_of_experience} years). The recommended visa subclass ${recommendedVisa} aligns with your current profile strength.`
+    detailed_analysis: analysis
   };
 }
