@@ -130,33 +130,30 @@ export type Database = {
           },
         ]
       }
-      user_subscriptions: {
+      user_payments: {
         Row: {
           created_at: string
-          expires_at: string | null
           id: string
+          payment_completed_at: string | null
           plan_id: string
-          starts_at: string | null
           status: string
           stripe_session_id: string | null
           user_id: string
         }
         Insert: {
           created_at?: string
-          expires_at?: string | null
           id?: string
+          payment_completed_at?: string | null
           plan_id: string
-          starts_at?: string | null
           status?: string
           stripe_session_id?: string | null
           user_id: string
         }
         Update: {
           created_at?: string
-          expires_at?: string | null
           id?: string
+          payment_completed_at?: string | null
           plan_id?: string
-          starts_at?: string | null
           status?: string
           stripe_session_id?: string | null
           user_id?: string

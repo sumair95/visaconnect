@@ -35,7 +35,7 @@ enable_confirmations = true
 [functions.visa-assessment]
 verify_jwt = true
 
-[functions.create-checkout]
+[functions.create-payment]
 verify_jwt = true
 
 [functions.customer-portal]
