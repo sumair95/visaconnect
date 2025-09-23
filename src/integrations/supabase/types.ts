@@ -160,6 +160,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "user_payments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "user_subscriptions_plan_id_fkey"
             columns: ["plan_id"]
             isOneToOne: false
@@ -288,7 +295,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_authenticated_user_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never
