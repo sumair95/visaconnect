@@ -90,7 +90,7 @@ export const PaymentIntegration: React.FC = () => {
       if (error) throw error;
 
       if (data.url) {
-        window.open(data.url, '_blank');
+        window.location.href = data.url;
       }
     } catch (error: any) {
       toast({
@@ -172,7 +172,7 @@ export const PaymentIntegration: React.FC = () => {
                 ) : (
                   <>
                     <CreditCard className="w-4 h-4 mr-2" />
-                    Purchase Assessment for ${plan.price}
+                    One-Time Payment - ${plan.price}
                   </>
                 )}
               </Button>
