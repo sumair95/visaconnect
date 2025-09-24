@@ -64,6 +64,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [selectedVisa, setSelectedVisa] = useState<VisaCategory | null>(null);
   const [requirementsModalOpen, setRequirementsModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('overview');
 
   const fetchData = async () => {
     if (!user) return;
@@ -150,13 +151,13 @@ const Dashboard = () => {
       </header>
 
       <div className="container mx-auto px-4 py-8">
-        <Tabs defaultValue="overview" className="space-y-8">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="assessment">Assessment</TabsTrigger>
-            <TabsTrigger value="documents">Documents</TabsTrigger>
-            <TabsTrigger value="profile">Profile</TabsTrigger>
-            <TabsTrigger value="payment">Payment</TabsTrigger>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 h-auto">
+            <TabsTrigger value="overview" className="text-xs sm:text-sm">Overview</TabsTrigger>
+            <TabsTrigger value="assessment" className="text-xs sm:text-sm">Assessment</TabsTrigger>
+            <TabsTrigger value="documents" className="text-xs sm:text-sm">Documents</TabsTrigger>
+            <TabsTrigger value="profile" className="text-xs sm:text-sm">Profile</TabsTrigger>
+            <TabsTrigger value="payment" className="text-xs sm:text-sm">Payment</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
@@ -173,11 +174,11 @@ const Dashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="flex flex-col sm:flex-row gap-4">
-                  <Button className="flex-1">
+                  <Button className="flex-1" onClick={() => setActiveTab('assessment')}>
                     <GraduationCap className="w-4 h-4 mr-2" />
                     Complete Profile Assessment
                   </Button>
-                  <Button variant="outline" className="flex-1">
+                  <Button variant="outline" className="flex-1" onClick={() => setActiveTab('documents')}>
                     <Upload className="w-4 h-4 mr-2" />
                     Upload Documents
                   </Button>
