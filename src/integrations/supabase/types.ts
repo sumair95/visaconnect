@@ -305,6 +305,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_authenticated_user_id_secure: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      is_profile_owner: {
+        Args: { profile_user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
