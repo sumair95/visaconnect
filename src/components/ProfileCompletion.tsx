@@ -24,6 +24,8 @@ const profileSchema = z.object({
   current_occupation: z.string().min(1, 'Current occupation is required'),
   years_of_experience: z.number().min(0, 'Experience years must be 0 or more'),
   education_level: z.string().min(1, 'Education level is required'),
+  marital_status: z.string().min(1, 'Marital status is required'),
+  english_test_score: z.number().min(0, 'English test score must be 0 or more').optional(),
 });
 
 type ProfileFormData = z.infer<typeof profileSchema>;
@@ -52,6 +54,11 @@ const EDUCATION_LEVELS = [
   'Doctoral Degree'
 ];
 
+const MARITAL_STATUS_OPTIONS = [
+  'Single',
+  'Married'
+];
+
 export const ProfileCompletion: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -71,6 +78,8 @@ export const ProfileCompletion: React.FC = () => {
       current_occupation: '',
       years_of_experience: 0,
       education_level: '',
+      marital_status: '',
+      english_test_score: 0,
     },
   });
 
@@ -106,6 +115,8 @@ export const ProfileCompletion: React.FC = () => {
           current_occupation: data.current_occupation || '',
           years_of_experience: data.years_of_experience || 0,
           education_level: data.education_level || '',
+          marital_status: data.marital_status || '',
+          english_test_score: data.english_test_score || 0,
         });
       }
     };
@@ -349,6 +360,50 @@ export const ProfileCompletion: React.FC = () => {
                             <option key={level} value={level}>{level}</option>
                           ))}
                         </select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="marital_status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Marital Status</FormLabel>
+                      <FormControl>
+                        <select 
+                          {...field}
+                          className="w-full p-3 border border-input rounded-md bg-background"
+                        >
+                          <option value="">Select marital status...</option>
+                          {MARITAL_STATUS_OPTIONS.map((status) => (
+                            <option key={status} value={status}>{status}</option>
+                          ))}
+                        </select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="english_test_score"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>IELTS/PTE Score</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          step="0.5"
+                          min="0"
+                          max="9"
+                          placeholder="Enter your IELTS or PTE score (e.g., 7.5)"
+                          {...field}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

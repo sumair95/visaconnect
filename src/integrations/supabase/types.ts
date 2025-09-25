@@ -21,9 +21,11 @@ export type Database = {
           date_of_birth: string | null
           education_level: string | null
           email: string | null
+          english_test_score: number | null
           first_name: string | null
           id: string
           last_name: string | null
+          marital_status: string | null
           nationality: string | null
           phone: string | null
           preferred_state: string | null
@@ -36,9 +38,11 @@ export type Database = {
           date_of_birth?: string | null
           education_level?: string | null
           email?: string | null
+          english_test_score?: number | null
           first_name?: string | null
           id: string
           last_name?: string | null
+          marital_status?: string | null
           nationality?: string | null
           phone?: string | null
           preferred_state?: string | null
@@ -51,9 +55,11 @@ export type Database = {
           date_of_birth?: string | null
           education_level?: string | null
           email?: string | null
+          english_test_score?: number | null
           first_name?: string | null
           id?: string
           last_name?: string | null
+          marital_status?: string | null
           nationality?: string | null
           phone?: string | null
           preferred_state?: string | null
